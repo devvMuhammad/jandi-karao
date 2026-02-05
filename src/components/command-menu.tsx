@@ -4,14 +4,18 @@ import { theme } from "@/lib/theme";
 interface CommandMenuProps {
   commands: Command[];
   selectedIndex: number;
-  inputBoxTop: number;
+  inputBoxTop: number | null;
+  isVisible: boolean;
 }
 
 export function CommandMenu({
   commands,
   selectedIndex,
   inputBoxTop,
+  isVisible,
 }: CommandMenuProps) {
+  if (!isVisible || inputBoxTop === null) return null;
+
   if (commands.length === 0) return null;
 
   return (

@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect, useMemo } from "react";
-import { useTerminalDimensions } from "@opentui/react";
+import { useState, useRef, useMemo, useCallback } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DirectChatTransport } from "ai";
 import { theme } from "@/lib/theme"
-import { useAgent } from "@/ai";
+import { codingAgent } from "@/ai/agent";
 import { ToolResultDisplay } from "@/components/tool-result-display";
 import { CommandMenu } from "@/components/command-menu";
 import { useCommandMenu } from "@/hooks/use-command-menu";
+import { useInputBoxTopPosition } from "@/hooks/use-input-box-top-position";
 import type { CommandContext } from "@/lib/commands";
 import type {
   TextareaRenderable,
@@ -18,40 +20,32 @@ interface ChatPageProps {
   onNavigateHome: () => void;
 }
 
+
+const transport = new DirectChatTransport({ agent: codingAgent });
+
 export function ChatPage({ onNavigateHome }: ChatPageProps) {
   const scrollRef = useRef<ScrollBoxRenderable>(null);
   const chatTextareaRef = useRef<TextareaRenderable>(null);
   const inputBoxRef = useRef<BoxRenderable>(null);
 
-  // Use the agent hook instead of manual state
-  const { messages, append, isLoading, clearMessages } = useAgent();
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport,
+  });
+
+  const isLoading = status === "submitted" || status === "streaming";
 
   const [input, setInput] = useState("");
-  const [inputBoxTop, setInputBoxTop] = useState<number | null>(null);
-  const { height: terminalHeight } = useTerminalDimensions();
-
-  // Track input box position for command menu positioning
-  useEffect(() => {
-    const updatePosition = () => {
-      if (inputBoxRef.current) {
-        setInputBoxTop(inputBoxRef.current.y);
-      }
-    };
-    updatePosition();
-    // Update on terminal resize
-    const interval = setInterval(updatePosition, 100);
-    return () => clearInterval(interval);
-  }, [terminalHeight]);
+  const inputBoxTop = useInputBoxTopPosition(inputBoxRef);
 
   const handleChatSubmit = async (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
 
     // Clear input and send to agent
-    chatTextareaRef.current?.setText("");
     setInput("");
+    chatTextareaRef.current?.setText("");
 
-    await append(trimmed);
+    await sendMessage({ text: trimmed });
 
     // Scroll to bottom after adding messages
     setTimeout(() => {
@@ -61,7 +55,7 @@ export function ChatPage({ onNavigateHome }: ChatPageProps) {
 
   const commandContext: CommandContext = useMemo(
     () => ({
-      clearMessages,
+      clearMessages: () => setMessages([]),
       clearInput: () => {
         chatTextareaRef.current?.setText("");
         setInput("");
@@ -69,7 +63,7 @@ export function ChatPage({ onNavigateHome }: ChatPageProps) {
       navigateHome: onNavigateHome,
       exit: () => process.exit(0),
     }),
-    [clearMessages, onNavigateHome],
+    [setMessages, onNavigateHome],
   );
 
   const { isVisible, filteredCommands, selectedIndex, handleKeyDown } =
@@ -145,13 +139,12 @@ export function ChatPage({ onNavigateHome }: ChatPageProps) {
       </scrollbox>
 
       {/* Command Menu - Absolutely positioned above the input */}
-      {isVisible && inputBoxTop !== null && (
-        <CommandMenu
-          commands={filteredCommands}
-          selectedIndex={selectedIndex}
-          inputBoxTop={inputBoxTop}
-        />
-      )}
+      <CommandMenu
+        commands={filteredCommands}
+        selectedIndex={selectedIndex}
+        inputBoxTop={inputBoxTop}
+        isVisible={isVisible}
+      />
 
       {/* Fixed Footer with Input */}
       <box ref={inputBoxRef} flexShrink={0} marginTop={1}>
