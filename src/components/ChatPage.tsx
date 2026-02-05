@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useTerminalDimensions } from "@opentui/react";
+import { useRenderer, useTerminalDimensions } from "@opentui/react";
 import { theme } from "../lib/theme";
+import { useAgent } from "../ai";
+import { ToolResultDisplay } from "./ToolResultDisplay";
+import type { UIMessage } from "ai";
 import type {
   TextareaRenderable,
   ScrollBoxRenderable,
@@ -8,15 +11,14 @@ import type {
   KeyEvent,
 } from "@opentui/core";
 
+type ToolInvocationPart = Extract<
+  UIMessage["parts"][number],
+  { type: "tool-invocation" }
+>;
+
 interface ChatPageProps {
   initialMessage: string;
   onNavigateHome: () => void;
-}
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
 }
 
 const commands = [
@@ -28,12 +30,14 @@ const commands = [
   { name: "/help", description: "Show available commands" },
 ];
 
-export function ChatPage({ initialMessage, onNavigateHome }: ChatPageProps) {
+export function ChatPage({ onNavigateHome }: ChatPageProps) {
   const scrollRef = useRef<ScrollBoxRenderable>(null);
   const chatTextareaRef = useRef<TextareaRenderable>(null);
   const inputBoxRef = useRef<BoxRenderable>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isFocusedOnInput, setIsFocusedOnInput] = useState(true);
+
+  // Use the agent hook instead of manual state
+  const { messages, append, isLoading, clearMessages } = useAgent();
+
   const [input, setInput] = useState("");
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
   const [inputBoxTop, setInputBoxTop] = useState<number | null>(null);
@@ -63,7 +67,7 @@ export function ChatPage({ initialMessage, onNavigateHome }: ChatPageProps) {
     return () => clearInterval(interval);
   }, [terminalHeight]);
 
-  const handleChatSubmit = (value: string) => {
+  const handleChatSubmit = async (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
 
@@ -78,42 +82,23 @@ export function ChatPage({ initialMessage, onNavigateHome }: ChatPageProps) {
     }
 
     if (trimmed === "/clear") {
-      setMessages([]);
-      if (chatTextareaRef.current) {
-        chatTextareaRef.current.setText("");
-      }
+      clearMessages();
+      chatTextareaRef.current?.setText("");
       setInput("");
       return;
     }
 
     if (trimmed === "/help") {
-      // For now, just clear the input
-      if (chatTextareaRef.current) {
-        chatTextareaRef.current.setText("");
-      }
+      chatTextareaRef.current?.setText("");
       setInput("");
       return;
     }
 
-    // Add user message and dummy assistant response
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `msg-${Date.now()}`,
-        role: "user",
-        content: trimmed,
-      },
-      {
-        id: `msg-${Date.now() + 1}`,
-        role: "assistant",
-        content: "This is a dummy response. AI integration coming soon...",
-      },
-    ]);
-
-    if (chatTextareaRef.current) {
-      chatTextareaRef.current.setText("");
-    }
+    // Clear input and send to agent
+    chatTextareaRef.current?.setText("");
     setInput("");
+
+    await append(trimmed);
 
     // Scroll to bottom after adding messages
     setTimeout(() => {
@@ -124,6 +109,10 @@ export function ChatPage({ initialMessage, onNavigateHome }: ChatPageProps) {
   const handleKeyDown = (e: KeyEvent) => {
     // Submit on Enter (without Shift for newline)
     if (e.name === "return" && !e.shift) {
+      // when you hit enter, there are two possible scenarios:
+      // 1. you are in the command menu, should submit the selected command
+      // 2. you are not in the command menu, should submit the input
+
       e.preventDefault();
       if (showCommandMenu && filteredCommands.length > 0) {
         // If command menu is showing, submit the selected command
@@ -160,6 +149,8 @@ export function ChatPage({ initialMessage, onNavigateHome }: ChatPageProps) {
     }
   };
 
+  // console.log("messages", messages)
+
   return (
     <box flexDirection="column" height="100%" backgroundColor={theme.bg}>
       {/* Fixed Header - with left border accent */}
@@ -186,22 +177,42 @@ export function ChatPage({ initialMessage, onNavigateHome }: ChatPageProps) {
         flexGrow={1}
         backgroundColor={theme.bg}
         marginTop={0}
+        stickyScroll={true}
       >
-        {messages.map((msg) =>
-          msg.role === "user" ? (
+        {messages.map((message) =>
+          message.role === "user" ? (
             <box
-              key={msg.id}
+              key={message.id}
               border={true}
               borderColor={theme.borderFocused}
               paddingLeft={1}
             >
-              <text fg={theme.text}>{msg.content}</text>
+              <text fg={theme.text}>{message.parts.filter((p) => p.type === "text").map((p) => p.text).join("")}</text>
             </box>
           ) : (
-            <box key={msg.id} paddingLeft={1}>
-              <text fg={theme.textDim}>{msg.content}</text>
+            <box key={message.id} flexDirection="column" paddingLeft={1}>
+              {message.parts.map((part) => {
+                if (part.type === "tool-read_file" || part.type === "tool-write_file") {
+                  return <ToolResultDisplay key={part.toolCallId} toolCall={part} />
+                }
+
+                if (part.type === "text") {
+                  return <text key={part.type} fg={theme.text}>{part.text}</text>
+                }
+
+                if (part.type === "reasoning") {
+                  return <text key={part.type} fg={theme.textDim}>{part.text}</text>
+                }
+
+              })}
             </box>
           ),
+        )}
+        {/* Loading indicator */}
+        {isLoading && (
+          <box paddingLeft={1}>
+            <text fg={theme.accentDim}>Thinking...</text>
+          </box>
         )}
       </scrollbox>
 
@@ -281,7 +292,7 @@ export function ChatPage({ initialMessage, onNavigateHome }: ChatPageProps) {
               focusedTextColor={theme.text}
               focusedBackgroundColor={theme.bgHighlight}
               placeholder="Type your message... (/exit to quit, /home to go back)"
-              focused={isFocusedOnInput}
+              focused={true}
               onContentChange={() => {
                 const value = chatTextareaRef.current?.plainText ?? "";
                 setInput(value);
