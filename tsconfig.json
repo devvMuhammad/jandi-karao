@@ -7,6 +7,9 @@
     "jsx": "react-jsx",
     "jsxImportSource": "@opentui/react",
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }

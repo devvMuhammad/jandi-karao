@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import figlet from "figlet";
-import { theme } from "../lib/theme";
+import { theme } from "@/lib/theme";
 import type { TextareaRenderable } from "@opentui/core";
 
 interface HomePageProps {

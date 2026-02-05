@@ -47,3 +47,28 @@ bun typecheck        # Check for TypeScript errors
 - `opentui/` - OpenTUI component patterns and best practices
 - `typescript-expert.md` - TypeScript patterns and conventions
 - `ai-sdk.md` - AI SDK integration patterns
+
+## Git Commit Conventions
+
+Follow conventional commit format with these guidelines:
+
+- **Format:** `<type>: <description>` (all lowercase)
+- **Types:** `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `style:`, `test:`
+- **Style:** concise messages, lowercase, no emojis
+- **Do not** add "Co-Authored-By: Claude" footer
+
+**Examples:**
+```
+feat: add ai sdk dependencies
+fix: remove trailing comma in tsconfig
+chore: update dependencies
+```
+
+## Import and File Naming Conventions
+
+- **Use "@" alias for imports**: Always use `@/` alias instead of relative imports (`../` or `../../`)
+  - Example: `import { theme } from "@/lib/theme"` instead of `import { theme } from "../lib/theme"`
+- **File naming**: Use kebab-case for all filenames (e.g., `chat-page.tsx`, `command-menu.tsx`, `use-command-menu.ts`)
+  - Component files: `chat-page.tsx`, `home-page.tsx`
+  - Hook files: `use-command-menu.ts`
+  - Utility files: `output-screenshot.ts`

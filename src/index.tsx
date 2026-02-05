@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
-import { HomePage } from "./components/HomePage";
-import { ChatPage } from "./components/ChatPage";
-import { theme } from "./lib/theme";
+import { HomePage } from "@/components/home-page";
+import { ChatPage } from "@/components/chat-page";
+import { theme } from "@/lib/theme";
 
 type Route = "home" | "chat";
 
