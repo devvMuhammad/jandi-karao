@@ -37,11 +37,11 @@ function ReadFileResultDisplay({ toolCall }: ReadFileResultDisplayProps) {
           {output.success ? (
             <box flexDirection="column" paddingLeft={3}>
               <text fg={theme.textDim}>
-                ✓ {output.size} bytes, {output.lines} lines
+                ✓ {output.data.size} bytes, {output.data.lines} lines
               </text>
-              {output.content && (
+              {output.data.content && (
                 <box paddingTop={1}>
-                  <text fg={theme.text}>{output.content}</text>
+                  <text fg={theme.text}>{output.data.content}</text>
                 </box>
               )}
             </box>
@@ -95,8 +95,8 @@ function WriteFileResultDisplay({ toolCall }: WriteFileResultDisplayProps) {
           {output.success ? (
             <box paddingLeft={3}>
               <text fg={theme.textDim}>
-                ✓ wrote {output.bytesWritten} bytes, {output.lines} lines to{" "}
-                {output.path}
+                ✓ wrote {output.data.bytesWritten} bytes, {output.data.lines} lines to{" "}
+                {output.data.path}
               </text>
             </box>
           ) : (

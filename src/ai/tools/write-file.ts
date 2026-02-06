@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { ToolResult } from "./utils";
 
 const writeFileParams = z.object({
   path: z.string().describe("Path to write the file"),
@@ -7,16 +8,11 @@ const writeFileParams = z.object({
 });
 
 export type WriteFileResult =
-  | {
-      success: true;
-      path: string;
-      bytesWritten: number;
-      lines: number;
-    }
-  | {
-      success: false;
-      error: string;
-    };
+  ToolResult<{
+    path: string;
+    bytesWritten: number;
+    lines: number;
+  }>;
 
 export const writeFileTool = tool({
   description: "Write content to a file. Creates or overwrites.",
@@ -26,9 +22,11 @@ export const writeFileTool = tool({
       await Bun.write(path, content);
       return {
         success: true,
-        path,
-        bytesWritten: content.length,
-        lines: content.split("\n").length,
+        data: {
+          path,
+          bytesWritten: content.length,
+          lines: content.split("\n").length,
+        }
       };
     } catch (error) {
       return { success: false, error: String(error) };
