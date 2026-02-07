@@ -2,6 +2,8 @@ import { tool } from "ai";
 import { z } from "zod";
 import { ToolResult } from "./utils";
 
+import description from "./write-file.txt";
+
 const writeFileParams = z.object({
   path: z.string().describe("Path to write the file"),
   content: z.string().describe("Complete file content"),
@@ -15,7 +17,7 @@ export type WriteFileResult =
   }>;
 
 export const writeFileTool = tool({
-  description: "Write content to a file. Creates or overwrites.",
+  description,
   inputSchema: writeFileParams,
   execute: async ({ path, content }: z.infer<typeof writeFileParams>): Promise<WriteFileResult> => {
     try {
@@ -29,7 +31,7 @@ export const writeFileTool = tool({
         }
       };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   },
 });

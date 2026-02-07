@@ -1,0 +1,36 @@
+## bash
+
+Executes a bash command in the system shell.
+
+### Behavior
+
+- Runs the command via `bash -c` and captures stdout, stderr, and the exit code.
+- Succeeds when the command exits with code 0; fails otherwise.
+- Output is truncated to 4000 characters per stream (stdout/stderr).
+- The process is killed if it exceeds the timeout.
+
+### Guidelines
+
+- Use for tasks that require shell execution: running scripts, installing packages, git operations, build commands, running tests.
+- **Do not use bash for reading files** — use read_file instead.
+- **Do not use bash for writing files** — use write_file or edit_file instead.
+- **Do not use bash for searching file contents** — use grep instead.
+- Prefer simple, single commands. Chain with `&&` only when order matters.
+- Always quote paths that contain spaces.
+- Be cautious with destructive commands (rm, git reset --hard, etc.) — confirm with the user first.
+- Use for: `bun install`, `bun run dev`, `bun typecheck`, `git status`, `git diff`, `git commit`, `ls`, `mkdir`, etc.
+- Do not run interactive commands that require user input (e.g., `vim`, `nano`, `git rebase -i`).
+
+### Example Usage
+
+Run type checking:
+  command: "bun typecheck"
+
+Install a package:
+  command: "bun add zod"
+
+Check git status:
+  command: "git status"
+
+List directory contents:
+  command: "ls -la src/ai/tools"

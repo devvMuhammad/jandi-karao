@@ -2,6 +2,8 @@ import { tool } from "ai";
 import { z } from "zod";
 import { ToolResult } from "./utils";
 
+import description from "./read-file.txt";
+
 const readFileParams = z.object({
   path: z.string().describe("Path to the file to read"),
 });
@@ -14,7 +16,7 @@ export type ReadFileResult = ToolResult<{
 }>;
 
 export const readFileTool = tool({
-  description: "Read the contents of a file. Always read before modifying.",
+  description,
   inputSchema: readFileParams,
   execute: async ({ path }: z.infer<typeof readFileParams>): Promise<ReadFileResult> => {
     try {
@@ -36,7 +38,7 @@ export const readFileTool = tool({
         }
       };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   },
 });

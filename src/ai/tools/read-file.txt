@@ -1,0 +1,24 @@
+## read_file
+
+Reads the contents of a file from the filesystem.
+
+### Behavior
+
+- Returns the file content along with metadata (path, size in bytes, line count).
+- Files larger than 2000 characters are truncated with a "... (truncated)" indicator.
+- Returns an error if the file does not exist.
+
+### Guidelines
+
+- **Always read a file before modifying it.** You must know the current contents before using write_file or edit_file.
+- Use this to verify file contents after writing or editing.
+- Use this to understand existing code structure and patterns before making changes.
+- If a file is truncated, work with the visible portion or ask the user if they need a specific section.
+
+### Example Usage
+
+Read a source file:
+  path: "src/index.tsx"
+
+Read a config file:
+  path: "tsconfig.json"

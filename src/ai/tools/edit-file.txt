@@ -1,0 +1,37 @@
+## edit_file
+
+Makes targeted edits to a file by finding and replacing an exact string match.
+
+### Behavior
+
+- Finds the exact `old_string` in the file and replaces it with `new_string`.
+- Fails if `old_string` is not found in the file — double check whitespace and indentation.
+- Fails if `old_string` matches more than one location — provide more surrounding context to make it unique.
+- Only replaces the first (and only) occurrence.
+
+### Guidelines
+
+- **Always read the file first** with read_file to get the exact current content.
+- Copy the exact text from read_file output for `old_string` — do not retype or reformat it.
+- Include enough surrounding context in `old_string` to make the match unique.
+- Preserve the original indentation style (tabs vs spaces) in `new_string`.
+- Prefer edit_file over write_file for small, targeted changes — it's safer and less error-prone.
+- To delete code, set `new_string` to an empty string.
+- To insert code, include surrounding lines in `old_string` and add the new code in `new_string`.
+
+### Example Usage
+
+Fix a typo:
+  path: "src/index.ts"
+  old_string: "const messge = 'hello'"
+  new_string: "const message = 'hello'"
+
+Add an import:
+  path: "src/app.ts"
+  old_string: "import { foo } from './lib';"
+  new_string: "import { foo } from './lib';\nimport { bar } from './utils';"
+
+Delete a line:
+  path: "src/config.ts"
+  old_string: "const DEBUG = true;\n"
+  new_string: ""

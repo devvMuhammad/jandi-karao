@@ -1,0 +1,28 @@
+## write_file
+
+Creates a new file or completely overwrites an existing file with the provided content.
+
+### Behavior
+
+- Creates the file if it doesn't exist.
+- Completely overwrites the file if it already exists.
+- Returns the path, bytes written, and line count on success.
+
+### Guidelines
+
+- **Always read the file first** with read_file before overwriting — so you don't lose existing content.
+- Provide the **complete** file content, not just the changed parts.
+- Use this for creating new files or when the majority of a file needs to change.
+- For small, targeted changes to existing files, prefer **edit_file** instead.
+- Follow existing code style and patterns found in the file or project.
+- Never write files that contain secrets, credentials, or API keys.
+
+### Example Usage
+
+Create a new utility file:
+  path: "src/lib/helpers.ts"
+  content: "export function add(a: number, b: number): number {\n  return a + b;\n}\n"
+
+Overwrite a config:
+  path: ".env.example"
+  content: "API_KEY=your_key_here\nPORT=3000\n"

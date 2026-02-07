@@ -1,0 +1,40 @@
+## grep
+
+Searches for a regex pattern in file contents. Recursively searches directories.
+
+### Behavior
+
+- Searches recursively through directories by default.
+- Returns up to 50 matches, each with the file path, line number, and matching line content.
+- If there are more than 50 matches, indicates the total count and shows the first 50.
+- Returns an empty match list (not an error) when no matches are found.
+- Uses `grep -rn` under the hood.
+
+### Guidelines
+
+- Use this to find where functions, variables, types, or strings are defined or used.
+- Use this to understand how code is structured before making changes.
+- Use the **include** parameter to narrow searches to specific file types — this is faster and reduces noise.
+- Use simple patterns for literal searches. Use regex for flexible matching (e.g. `function\s+\w+` to find function declarations).
+- Prefer grep over bash for all content searching tasks.
+- After finding matches, use read_file to get the full context around relevant lines.
+
+### Example Usage
+
+Find all usages of a function:
+  pattern: "readFileTool"
+  path: "src/"
+
+Search only TypeScript files:
+  pattern: "import.*from"
+  path: "src/"
+  include: "*.ts"
+
+Find a specific string in a single file:
+  pattern: "TODO"
+  path: "src/index.tsx"
+
+Find type definitions:
+  pattern: "export type"
+  path: "src/"
+  include: "*.ts"
