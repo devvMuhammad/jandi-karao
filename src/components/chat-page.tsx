@@ -8,6 +8,7 @@ import { InputPrompt } from "@/components/input-prompt";
 import type { CommandContext } from "@/lib/commands";
 import type { ScrollBoxRenderable } from "@opentui/core";
 import { saveMessage } from "@/lib/storage";
+import { ThinkingIndicator } from "@/components/thinking-indicator";
 
 
 interface ChatPageProps {
@@ -111,30 +112,25 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
               <text fg={theme.text}>{message.parts.filter((p) => p.type === "text").map((p) => p.text).join("")}</text>
             </box>
           ) : (
-            <box key={message.id} flexDirection="column" paddingLeft={1}>
-              {message.parts.map((part) => {
-                if (part.type === "tool-read_file" || part.type === "tool-write_file") {
-                  return <ToolResultDisplay key={part.toolCallId} toolCall={part} />
+            <box key={message.id} flexDirection="column" paddingLeft={1} gap={1}>
+              {message.parts.map((part, i) => {
+                if (part.type.startsWith("tool-")) {
+                  return <ToolResultDisplay key={"toolCallId" in part ? part.toolCallId : `${part.type}-${i}`} toolCall={part} />
                 }
 
                 if (part.type === "text") {
-                  return <text key={part.type} fg={theme.text}>{part.text}</text>
+                  return <text key={`${part.type}-${i}`} fg={theme.text}>{part.text}</text>
                 }
 
                 if (part.type === "reasoning") {
-                  return <text key={part.type} fg={theme.textDim}>{part.text}</text>
+                  return <text key={`${part.type}-${i}`} fg={theme.textDim}>{part.text}</text>
                 }
 
               })}
             </box>
           ),
         )}
-        {/* Loading indicator */}
-        {isLoading && (
-          <box paddingLeft={1}>
-            <text fg={theme.accentDim}>Thinking...</text>
-          </box>
-        )}
+        {isLoading && <ThinkingIndicator />}
       </scrollbox>
 
       {/* Input Prompt with Command Menu */}

@@ -20,14 +20,13 @@ function ReadFileResultDisplay({
   if (toolCall.state !== "output-available") {
     return (
       <box paddingLeft={3}>
-        <text fg={theme.textDim}>Reading {toolCall.input?.path}...</text>
+        <text fg={theme.textDim}>{`Reading ${toolCall.input?.path}...`}</text>
       </box>
     );
   }
 
   const output = toolCall.output;
   const borderColor = output.success ? theme.accentTertiary : theme.accent;
-  const icon = output.success ? "📖" : "❌";
 
   return (
     <box
@@ -38,13 +37,13 @@ function ReadFileResultDisplay({
     >
       <box flexDirection="column">
         <text fg={borderColor}>
-          <strong>{icon} read_file:</strong>{" "}
+          <strong>{`▸ read_file: `}</strong>
           <span fg={theme.text}>{toolCall.input?.path}</span>
         </text>
         {output.success ? (
           <box flexDirection="column" paddingLeft={3}>
             <text fg={theme.textDim}>
-              ✓ {output.data.size} bytes, {output.data.lines} lines
+              {`+ ${output.data.size} bytes, ${output.data.lines} lines`}
             </text>
             {output.data.content && (
               <box paddingTop={1}>
@@ -54,7 +53,7 @@ function ReadFileResultDisplay({
           </box>
         ) : (
           <box paddingLeft={3}>
-            <text fg={theme.accent}>✗ {output.error}</text>
+            <text fg={theme.accent}>{`x ${output.error}`}</text>
           </box>
         )}
       </box>
@@ -72,14 +71,13 @@ function WriteFileResultDisplay({
   if (toolCall.state !== "output-available") {
     return (
       <box paddingLeft={3}>
-        <text fg={theme.textDim}>Writing {toolCall.input?.path}...</text>
+        <text fg={theme.textDim}>{`Writing ${toolCall.input?.path}...`}</text>
       </box>
     );
   }
 
   const output = toolCall.output;
   const borderColor = output.success ? theme.accentTertiary : theme.accent;
-  const icon = output.success ? "✏️" : "❌";
 
   return (
     <box
@@ -90,19 +88,18 @@ function WriteFileResultDisplay({
     >
       <box flexDirection="column">
         <text fg={borderColor}>
-          <strong>{icon} write_file:</strong>{" "}
+          <strong>{`▸ write_file: `}</strong>
           <span fg={theme.text}>{toolCall.input?.path}</span>
         </text>
         {output.success ? (
           <box paddingLeft={3}>
             <text fg={theme.textDim}>
-              ✓ wrote {output.data.bytesWritten} bytes, {output.data.lines}{" "}
-              lines to {output.data.path}
+              {`+ wrote ${output.data.bytesWritten} bytes, ${output.data.lines} lines to ${output.data.path}`}
             </text>
           </box>
         ) : (
           <box paddingLeft={3}>
-            <text fg={theme.accent}>✗ {output.error}</text>
+            <text fg={theme.accent}>{`x ${output.error}`}</text>
           </box>
         )}
       </box>
@@ -120,14 +117,13 @@ function EditFileResultDisplay({
   if (toolCall.state !== "output-available") {
     return (
       <box paddingLeft={3}>
-        <text fg={theme.textDim}>Editing {toolCall.input?.path}...</text>
+        <text fg={theme.textDim}>{`Editing ${toolCall.input?.path}...`}</text>
       </box>
     );
   }
 
   const output = toolCall.output;
   const borderColor = output.success ? theme.accentTertiary : theme.accent;
-  const icon = output.success ? "🔧" : "❌";
 
   return (
     <box
@@ -138,19 +134,18 @@ function EditFileResultDisplay({
     >
       <box flexDirection="column">
         <text fg={borderColor}>
-          <strong>{icon} edit_file:</strong>{" "}
+          <strong>{`▸ edit_file: `}</strong>
           <span fg={theme.text}>{toolCall.input?.path}</span>
         </text>
         {output.success ? (
           <box paddingLeft={3}>
             <text fg={theme.textDim}>
-              ✓ {output.data.replacements} replacement
-              {output.data.replacements === 1 ? "" : "s"} made
+              {`+ ${output.data.replacements} replacement${output.data.replacements === 1 ? "" : "s"} made`}
             </text>
           </box>
         ) : (
           <box paddingLeft={3}>
-            <text fg={theme.accent}>✗ {output.error}</text>
+            <text fg={theme.accent}>{`x ${output.error}`}</text>
           </box>
         )}
       </box>
@@ -169,7 +164,7 @@ function BashResultDisplay({
     return (
       <box paddingLeft={3}>
         <text fg={theme.textDim}>
-          Running `{toolCall.input?.command}`...
+          {`Running \`${toolCall.input?.command}\`...`}
         </text>
       </box>
     );
@@ -177,7 +172,6 @@ function BashResultDisplay({
 
   const output = toolCall.output;
   const borderColor = output.success ? theme.accentTertiary : theme.accent;
-  const icon = output.success ? "⚡" : "❌";
 
   return (
     <box
@@ -188,13 +182,13 @@ function BashResultDisplay({
     >
       <box flexDirection="column">
         <text fg={borderColor}>
-          <strong>{icon} bash:</strong>{" "}
+          <strong>{`▸ bash: `}</strong>
           <span fg={theme.text}>{toolCall.input?.command}</span>
         </text>
         {output.success ? (
           <box flexDirection="column" paddingLeft={3}>
             <text fg={theme.textDim}>
-              ✓ exit code {output.data.exitCode}
+              {`+ exit code ${output.data.exitCode}`}
             </text>
             {output.data.stdout.trim() && (
               <box paddingTop={1}>
@@ -209,7 +203,7 @@ function BashResultDisplay({
           </box>
         ) : (
           <box paddingLeft={3}>
-            <text fg={theme.accent}>✗ {output.error}</text>
+            <text fg={theme.accent}>{`x ${output.error}`}</text>
           </box>
         )}
       </box>
@@ -228,7 +222,7 @@ function GrepResultDisplay({
     return (
       <box paddingLeft={3}>
         <text fg={theme.textDim}>
-          Searching for `{toolCall.input?.pattern}`...
+          {`Searching for \`${toolCall.input?.pattern}\`...`}
         </text>
       </box>
     );
@@ -236,7 +230,6 @@ function GrepResultDisplay({
 
   const output = toolCall.output;
   const borderColor = output.success ? theme.accentTertiary : theme.accent;
-  const icon = output.success ? "🔍" : "❌";
 
   return (
     <box
@@ -247,33 +240,30 @@ function GrepResultDisplay({
     >
       <box flexDirection="column">
         <text fg={borderColor}>
-          <strong>{icon} grep:</strong>{" "}
-          <span fg={theme.text}>/{toolCall.input?.pattern}/</span>
-          <span fg={theme.textDim}> in {toolCall.input?.path}</span>
+          <strong>{`▸ grep: `}</strong>
+          <span fg={theme.text}>{`/${toolCall.input?.pattern}/`}</span>
+          <span fg={theme.textDim}>{` in ${toolCall.input?.path}`}</span>
         </text>
         {output.success ? (
           <box flexDirection="column" paddingLeft={3}>
             <text fg={theme.textDim}>
-              ✓ {output.data.matchCount} match
-              {output.data.matchCount === 1 ? "" : "es"}
+              {`+ ${output.data.matchCount} match${output.data.matchCount === 1 ? "" : "es"}`}
             </text>
             {output.data.matches.slice(0, 8).map((m, i) => (
               <text key={i} fg={theme.text}>
-                <span fg={theme.textDim}>
-                  {m.file}:{m.line}
-                </span>{" "}
-                {m.content}
+                <span fg={theme.textDim}>{`${m.file}:${m.line}`}</span>
+                {` ${m.content}`}
               </text>
             ))}
             {output.data.matchCount > 8 && (
               <text fg={theme.textDim}>
-                ... and {output.data.matchCount - 8} more
+                {`... and ${output.data.matchCount - 8} more`}
               </text>
             )}
           </box>
         ) : (
           <box paddingLeft={3}>
-            <text fg={theme.accent}>✗ {output.error}</text>
+            <text fg={theme.accent}>{`x ${output.error}`}</text>
           </box>
         )}
       </box>
