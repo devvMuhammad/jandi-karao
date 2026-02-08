@@ -1,51 +1,52 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DirectChatTransport } from "ai";
 import { theme } from "@/lib/theme"
 import { codingAgent } from "@/ai/agent";
 import { ToolResultDisplay } from "@/components/tool-result-display";
-import { CommandMenu } from "@/components/command-menu";
-import { useCommandMenu } from "@/hooks/use-command-menu";
-import { useInputBoxTopPosition } from "@/hooks/use-input-box-top-position";
+import { InputPrompt } from "@/components/input-prompt";
 import type { CommandContext } from "@/lib/commands";
-import type {
-  TextareaRenderable,
-  ScrollBoxRenderable,
-  BoxRenderable,
-} from "@opentui/core";
+import type { ScrollBoxRenderable } from "@opentui/core";
+import { saveMessage } from "@/lib/storage";
 
 
 interface ChatPageProps {
-  initialMessage: string;
+  conversationId: string;
+  initialMessage?: string;
   onNavigateHome: () => void;
+  onNewConversation: () => void;
 }
 
 
 const transport = new DirectChatTransport({ agent: codingAgent });
 
-export function ChatPage({ onNavigateHome }: ChatPageProps) {
+export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNewConversation }: ChatPageProps) {
   const scrollRef = useRef<ScrollBoxRenderable>(null);
-  const chatTextareaRef = useRef<TextareaRenderable>(null);
-  const inputBoxRef = useRef<BoxRenderable>(null);
+  const initialMessageSent = useRef(false);
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport,
+    onFinish: ({ message }) => {
+      saveMessage(conversationId, {
+        id: message.id,
+        role: message.role,
+        parts: message.parts,
+      });
+    },
   });
 
   const isLoading = status === "submitted" || status === "streaming";
 
-  const [input, setInput] = useState("");
-  const inputBoxTop = useInputBoxTopPosition(inputBoxRef);
-
   const handleChatSubmit = async (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
+    // Save user message to DB
+    if (conversationId) {
+      saveMessage(conversationId, {
+        role: "user",
+        parts: [{ type: "text", text: value }],
+      });
+    }
 
-    // Clear input and send to agent
-    setInput("");
-    chatTextareaRef.current?.setText("");
-
-    await sendMessage({ text: trimmed });
+    await sendMessage({ text: value });
 
     // Scroll to bottom after adding messages
     setTimeout(() => {
@@ -53,25 +54,23 @@ export function ChatPage({ onNavigateHome }: ChatPageProps) {
     }, 50);
   };
 
+  useEffect(() => {
+    if (initialMessage && !initialMessageSent.current) {
+      initialMessageSent.current = true;
+      handleChatSubmit(initialMessage);
+    }
+  }, [initialMessage]);
+
   const commandContext: CommandContext = useMemo(
     () => ({
       clearMessages: () => setMessages([]),
-      clearInput: () => {
-        chatTextareaRef.current?.setText("");
-        setInput("");
-      },
+      clearInput: () => { },
       navigateHome: onNavigateHome,
+      newConversation: onNewConversation,
       exit: () => process.exit(0),
     }),
-    [setMessages, onNavigateHome],
+    [setMessages, onNavigateHome, onNewConversation],
   );
-
-  const { isVisible, filteredCommands, selectedIndex, handleKeyDown } =
-    useCommandMenu({
-      input,
-      context: commandContext,
-      onSubmitMessage: handleChatSubmit,
-    });
 
   return (
     <box flexDirection="column" height="100%" backgroundColor={theme.bg}>
@@ -138,41 +137,13 @@ export function ChatPage({ onNavigateHome }: ChatPageProps) {
         )}
       </scrollbox>
 
-      {/* Command Menu - Absolutely positioned above the input */}
-      <CommandMenu
-        commands={filteredCommands}
-        selectedIndex={selectedIndex}
-        inputBoxTop={inputBoxTop}
-        isVisible={isVisible}
-      />
-
-      {/* Fixed Footer with Input */}
-      <box ref={inputBoxRef} flexShrink={0} marginTop={1}>
-        <box border={["left"]} borderColor={theme.borderFocused}>
-          <box
-            paddingLeft={1}
-            paddingRight={2}
-            paddingTop={1}
-            paddingBottom={1}
-            backgroundColor={theme.bgHighlight}
-          >
-            <textarea
-              ref={chatTextareaRef}
-              minHeight={1}
-              maxHeight={4}
-              textColor={theme.text}
-              focusedTextColor={theme.text}
-              focusedBackgroundColor={theme.bgHighlight}
-              placeholder="Type your message... (/exit to quit, /home to go back)"
-              focused={true}
-              onContentChange={() => {
-                const value = chatTextareaRef.current?.plainText ?? "";
-                setInput(value);
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          </box>
-        </box>
+      {/* Input Prompt with Command Menu */}
+      <box marginTop={1} flexShrink={0}>
+        <InputPrompt
+          commandContext={commandContext}
+          onSubmit={handleChatSubmit}
+          placeholder="Type your message... (/exit to quit, /home to go back)"
+        />
       </box>
     </box>
   );
