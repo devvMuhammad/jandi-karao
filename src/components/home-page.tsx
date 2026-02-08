@@ -1,113 +1,58 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import figlet from "figlet";
 import { theme } from "@/lib/theme";
-import type { TextareaRenderable } from "@opentui/core";
+import { createConversation } from "@/lib/storage";
+import { CommandMenu } from "@/components/command-menu";
+import { useCommandMenu } from "@/hooks/use-command-menu";
+import { useInputBoxLayout } from "@/hooks/use-input-box-layout";
+import type { CommandContext } from "@/lib/commands";
+import type { TextareaRenderable, BoxRenderable } from "@opentui/core";
 
 interface HomePageProps {
-  onNavigateToChat: (message: string) => void;
+  onNavigateToChat: (message: string, conversationId: string) => void;
 }
 
 const asciiArt = figlet.textSync("PHUKLABS", { font: "ANSI Shadow" });
 
-const commands = [
-  { name: "/exit", description: "Exit the application" },
-  { name: "/quit", description: "Exit the application" },
-  { name: "/clear", description: "Clear conversation" },
-  { name: "/help", description: "Show available commands" },
-];
-
 export function HomePage({ onNavigateToChat }: HomePageProps) {
   const textareaRef = useRef<TextareaRenderable>(null);
+  const inputBoxRef = useRef<BoxRenderable>(null);
+
   const [input, setInput] = useState("");
-  const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
 
-  const showCommandMenu = input.startsWith("/");
-  const filteredCommands = commands.filter((cmd) =>
-    cmd.name.toLowerCase().includes(input.toLowerCase()),
-  );
+  const inputBoxLayout = useInputBoxLayout(inputBoxRef);
 
-  // Reset selected index when filtered commands change
-  useEffect(() => {
-    setSelectedCommandIndex(0);
-  }, [input]);
-
-  const handleSubmit = (value: string) => {
+  const handleSubmit = async (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
 
-    // Handle commands
-    if (trimmed === "/exit" || trimmed === "/quit") {
-      process.exit(0);
-      return;
-    }
+    setInput("");
+    textareaRef.current?.setText("");
 
-    if (trimmed === "/clear") {
-      setInput("");
-      if (textareaRef.current) {
-        textareaRef.current.setText("");
-      }
-      return;
-    }
-
-    if (trimmed === "/help") {
-      // For now, just clear the input
-      setInput("");
-      if (textareaRef.current) {
-        textareaRef.current.setText("");
-      }
-      return;
-    }
-
-    // Navigate to chat with the message
-    onNavigateToChat(trimmed);
+    const conv = createConversation();
+    onNavigateToChat(trimmed, conv.id);
   };
 
-  const handleKeyDown = (e: {
-    name: string;
-    shift?: boolean;
-    preventDefault: () => void;
-  }) => {
-    // Submit on Enter (without Shift for newline)
-    if (e.name === "return" && !e.shift) {
-      e.preventDefault();
-      if (showCommandMenu && filteredCommands.length > 0) {
-        // If command menu is showing, submit the selected command
-        const selectedCommand = filteredCommands[selectedCommandIndex];
-        if (selectedCommand) {
-          handleSubmit(selectedCommand.name);
-        }
-      } else {
-        handleSubmit(input);
-      }
-      // Clear textarea after submit
-      if (textareaRef.current) {
-        textareaRef.current.setText("");
-      }
-      setInput("");
-      return;
-    }
+  const commandContext: CommandContext = useMemo(
+    () => ({
+      clearMessages: () => { },
+      clearInput: () => {
+        textareaRef.current?.setText("");
+        setInput("");
+      },
+      navigateHome: () => { },
+      newConversation: () => { },
+      exit: () => process.exit(0),
+    }),
+    [],
+  );
 
-    // Command menu navigation (only when menu is visible)
-    if (!showCommandMenu || filteredCommands.length === 0) return;
-
-    if (e.name === "up") {
-      e.preventDefault();
-      setSelectedCommandIndex((prev) =>
-        prev <= 0 ? filteredCommands.length - 1 : prev - 1,
-      );
-    } else if (e.name === "down") {
-      e.preventDefault();
-      setSelectedCommandIndex((prev) =>
-        prev >= filteredCommands.length - 1 ? 0 : prev + 1,
-      );
-    } else if (e.name === "tab") {
-      e.preventDefault();
-      // Auto-complete the selected command
-      const selectedCommand = filteredCommands[selectedCommandIndex];
-      textareaRef?.current?.setText(selectedCommand.name);
-      setInput(selectedCommand.name);
-    }
-  };
+  const { isVisible, filteredCommands, selectedIndex, handleKeyDown } =
+    useCommandMenu({
+      input,
+      context: commandContext,
+      onSubmitMessage: handleSubmit,
+    });
 
   return (
     <box
@@ -131,67 +76,17 @@ export function HomePage({ onNavigateToChat }: HomePageProps) {
         YOUR TIME IS IMPORTANT, SPEND IT ON SOMETHING ELSE
       </text>
 
-      {/* Command Menu (shown when input starts with /) */}
-      {showCommandMenu &&
-        (filteredCommands.length > 0 ? (
-          <box
-            flexDirection="column"
-            width={80}
-            marginBottom={1}
-            border={true}
-            borderColor={theme.border}
-            backgroundColor={theme.bgHighlight}
-          >
-            {filteredCommands.map((cmd, index) => (
-              <box
-                key={cmd.name}
-                flexDirection="row"
-                justifyContent="space-between"
-                paddingLeft={1}
-                paddingRight={1}
-                backgroundColor={
-                  index === selectedCommandIndex
-                    ? theme.bgSelected
-                    : theme.bgHighlight
-                }
-              >
-                <text
-                  fg={
-                    index === selectedCommandIndex
-                      ? theme.textInverse
-                      : theme.text
-                  }
-                >
-                  {cmd.name}
-                </text>
-                <text
-                  fg={
-                    index === selectedCommandIndex
-                      ? theme.textInverse
-                      : theme.textDim
-                  }
-                >
-                  {cmd.description}
-                </text>
-              </box>
-            ))}
-          </box>
-        ) : (
-          <box>
-            <text
-              fg={theme.text}
-              bg={theme.bgHighlight}
-              padding={1}
-              paddingLeft={2}
-              paddingRight={2}
-            >
-              No commands found
-            </text>
-          </box>
-        ))}
+      {/* Command Menu - Absolutely positioned above the input */}
 
-      {/* Input Box - following OpenCode's pattern */}
-      <box width={80} flexShrink={0}>
+      <CommandMenu
+        commands={filteredCommands}
+        selectedIndex={selectedIndex}
+        inputBoxLayout={inputBoxLayout}
+        isVisible={isVisible}
+      />
+
+      {/* Input Box */}
+      <box ref={inputBoxRef} width={80} flexShrink={0}>
         <box border={["left"]} borderColor={theme.borderFocused}>
           <box
             paddingLeft={2}

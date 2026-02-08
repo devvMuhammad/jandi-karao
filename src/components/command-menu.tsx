@@ -1,29 +1,30 @@
 import type { Command } from "@/lib/commands";
+import type { InputBoxLayout } from "@/hooks/use-input-box-layout";
 import { theme } from "@/lib/theme";
 
 interface CommandMenuProps {
   commands: Command[];
   selectedIndex: number;
-  inputBoxTop: number | null;
+  inputBoxLayout: InputBoxLayout;
   isVisible: boolean;
 }
 
 export function CommandMenu({
   commands,
   selectedIndex,
-  inputBoxTop,
+  inputBoxLayout,
   isVisible,
 }: CommandMenuProps) {
-  if (!isVisible || inputBoxTop === null) return null;
+  if (!isVisible || inputBoxLayout.top === null) return null;
 
   if (commands.length === 0) return null;
 
   return (
     <box
       position="absolute"
-      top={inputBoxTop - commands.length}
-      left={0}
-      right={1}
+      top={inputBoxLayout.top - commands.length}
+      left={inputBoxLayout.left ?? 0}
+      width={inputBoxLayout.width ?? undefined}
       zIndex={10}
     >
       <box border={["left"]} borderColor={theme.border}>
