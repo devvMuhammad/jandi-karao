@@ -3,19 +3,17 @@ import figlet from "figlet";
 import { theme } from "@/lib/theme";
 import { createConversation } from "@/lib/storage";
 import { InputPrompt } from "@/components/input-prompt";
+import { useApp } from "@/lib/app-context";
 import type { CommandContext } from "@/lib/commands";
-
-interface HomePageProps {
-  onNavigateToChat: (conversationId: string, initialMessage: string) => void;
-}
 
 const asciiArt = figlet.textSync("PHUKLABS", { font: "ANSI Shadow" });
 
-export function HomePage({ onNavigateToChat }: HomePageProps) {
-  // value is here is the value from the textarea or input box
+export function HomePage() {
+  const { openChat } = useApp();
+
   const handleSubmit = async (value: string) => {
     const conv = createConversation();
-    onNavigateToChat(conv.id, value);
+    openChat(conv.id, value);
   };
 
   const commandContext: CommandContext = useMemo(

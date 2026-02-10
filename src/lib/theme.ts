@@ -5,7 +5,7 @@ export const theme = {
   bgSelected: "#7aa2f7", // Selected item background
 
   // Text
-  text: "white", // Primary text
+  text: "#ffffff", // Primary text
   textDim: "#565f89", // Dimmed/secondary text
   textInverse: "#1a1b26", // Text on selected background
 

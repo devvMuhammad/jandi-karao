@@ -1,12 +1,15 @@
 import { theme } from "@/lib/theme";
 import { useKeyboard } from "@opentui/react";
+import { useNavigate } from "@/lib/navigation-context";
 import figlet from "figlet";
 
 const lostAsciiArt = figlet.textSync("LOST ?", { font: "ANSI Shadow" });
 
-export function NoConversation({ onGoHome }: { onGoHome: () => void }) {
+export function NoConversation() {
+  const { navigate } = useNavigate();
+
   useKeyboard((key) => {
-    if (key.name === "return") onGoHome();
+    if (key.name === "return") navigate("home");
   });
 
   return (

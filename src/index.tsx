@@ -1,54 +1,35 @@
-import { useState, useCallback } from "react";
 import { createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
 import { HomePage } from "@/components/home-page";
 import { ChatPage } from "@/components/chat-page";
+import { NoConversation } from "@/components/no-conversation";
 import { theme } from "@/lib/theme";
-import { createConversation } from "@/lib/storage";
-import { NoConversation } from "./components/no-conversation";
+import { NavigationProvider, useNavigate } from "@/lib/navigation-context";
+import { AppProvider, useApp } from "@/lib/app-context";
 
-
-type Route = "home" | "chat";
-
-export function App() {
-  const [activeRoute, setActiveRoute] = useState<Route>("home");
-  const [activeConversationId, setActiveConversationId] = useState<string | undefined>();
-  const [initialMessage, setInitialMessage] = useState<string | undefined>();
-
-  // navigate to chat page, used by home page
-  const navigateToChat = (conversationId: string, message?: string) => {
-    setActiveConversationId(conversationId);
-    setInitialMessage(message);
-    setActiveRoute("chat");
-  };
-
-  // navigating to home page, used by chat page and no conversation page
-  const navigateToHome = () => {
-    setActiveConversationId(undefined);
-    setActiveRoute("home");
-  };
-
-  const handleNewConversation = useCallback(() => {
-    // const conv = createConversation();
-    // setActiveConversationId(conv.id);
-  }, []);
+function Router() {
+  const { route } = useNavigate();
+  const { activeConversationId } = useApp();
 
   return (
-    <box backgroundColor={theme.bg} height="100%">
-      {activeRoute === "home" && <HomePage onNavigateToChat={navigateToChat} />}
-      {activeRoute === "chat" && (
-        activeConversationId ? (
-          <ChatPage
-            conversationId={activeConversationId}
-            initialMessage={initialMessage}
-            onNavigateHome={navigateToHome}
-            onNewConversation={handleNewConversation}
-          />
-        ) : (
-          <NoConversation onGoHome={navigateToHome} />
-        )
+    <>
+      {route === "home" && <HomePage />}
+      {route === "chat" && (
+        activeConversationId ? <ChatPage /> : <NoConversation />
       )}
-    </box>
+    </>
+  );
+}
+
+export function App() {
+  return (
+    <NavigationProvider>
+      <AppProvider>
+        <box backgroundColor={theme.bg} height="100%">
+          <Router />
+        </box>
+      </AppProvider>
+    </NavigationProvider>
   );
 }
 

@@ -6,29 +6,25 @@ import { sharedSyntaxStyle } from "@/lib/syntax-style";
 import { codingAgent } from "@/ai/agent";
 import { ToolResultDisplay } from "@/components/tool-result-display";
 import { InputPrompt } from "@/components/input-prompt";
+import { useApp } from "@/lib/app-context";
+import { useNavigate } from "@/lib/navigation-context";
 import type { CommandContext } from "@/lib/commands";
 import type { ScrollBoxRenderable } from "@opentui/core";
 import { saveMessage } from "@/lib/storage";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
 
 
-interface ChatPageProps {
-  conversationId: string;
-  initialMessage?: string;
-  onNavigateHome: () => void;
-  onNewConversation: () => void;
-}
-
-
 const transport = new DirectChatTransport({ agent: codingAgent });
 
-export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNewConversation }: ChatPageProps) {
+export function ChatPage() {
+  const { activeConversationId, initialMessage } = useApp();
+  const { navigate } = useNavigate();
   const scrollRef = useRef<ScrollBoxRenderable>(null);
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport,
     onFinish: ({ message }) => {
-      saveMessage(conversationId, {
+      saveMessage(activeConversationId!, {
         id: message.id,
         role: message.role,
         parts: message.parts,
@@ -39,20 +35,14 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
   const isLoading = status === "submitted" || status === "streaming";
 
   const handleChatSubmit = async (value: string) => {
-    // Save user message to DB
-    if (conversationId) {
-      saveMessage(conversationId, {
+    if (activeConversationId) {
+      saveMessage(activeConversationId, {
         role: "user",
         parts: [{ type: "text", text: value }],
       });
     }
 
     await sendMessage({ text: value });
-
-    // Scroll to bottom after adding messages
-    setTimeout(() => {
-      scrollRef.current?.scrollTo(Infinity);
-    }, 50);
   };
 
   useEffect(() => {
@@ -61,15 +51,19 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
     }
   }, [initialMessage]);
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo(Infinity);
+  }, [messages.length]);
+
   const commandContext: CommandContext = useMemo(
     () => ({
       clearMessages: () => setMessages([]),
       clearInput: () => { },
-      navigateHome: onNavigateHome,
-      newConversation: onNewConversation,
+      navigateHome: () => navigate("home"),
+      newConversation: () => { },
       exit: () => process.exit(0),
     }),
-    [setMessages, onNavigateHome, onNewConversation],
+    [setMessages, navigate],
   );
 
   return (
@@ -108,9 +102,8 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
               borderColor={theme.borderFocused}
               paddingLeft={1}
             >
-              <markdown
+              <text
                 content={message.parts.filter((p) => p.type === "text").map((p) => p.text).join("")}
-                syntaxStyle={sharedSyntaxStyle}
               />
             </box>
           ) : (
@@ -133,11 +126,10 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
 
                 if (part.type === "reasoning") {
                   return (
-                    <markdown
+                    <text
                       key={`${part.type}-${i}`}
                       content={part.text}
-                      syntaxStyle={sharedSyntaxStyle}
-                      streaming={true}
+                      fg={theme.textDim}
                     />
                   );
                 }
