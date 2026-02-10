@@ -1,6 +1,8 @@
 import { createContext, useContext, useState } from "react";
 
-export type Route = "home" | "chat";
+export type Route = "home" | "chat" | "sessions";
+const DEFAULT_ROUTE: Route = "home";
+
 
 interface NavigationContext {
   route: Route;
@@ -8,12 +10,12 @@ interface NavigationContext {
 }
 
 const navigationContext = createContext<NavigationContext>({
-  route: "home",
+  route: DEFAULT_ROUTE,
   navigate: () => { },
 });
 
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
-  const [route, setRoute] = useState<Route>("home");
+  const [route, setRoute] = useState<Route>(DEFAULT_ROUTE);
 
   const navigate = (route: Route) => {
     setRoute(route);

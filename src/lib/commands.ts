@@ -3,6 +3,7 @@ export interface CommandContext {
   clearMessages: () => void;
   clearInput: () => void;
   navigateHome: () => void;
+  navigateSessions: () => void;
   newConversation: () => void;
   exit: () => void;
 }
@@ -53,5 +54,10 @@ export const commands: Command[] = [
     name: "/help",
     description: "Show available commands",
     execute: (ctx) => ctx.clearInput(),
+  },
+  {
+    name: "/sessions",
+    description: "View all conversations",
+    execute: (ctx) => ctx.navigateSessions(),
   },
 ];

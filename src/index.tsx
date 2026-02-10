@@ -1,8 +1,9 @@
-import { createCliRenderer } from "@opentui/core";
+import { ConsolePosition, createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
 import { HomePage } from "@/components/home-page";
 import { ChatPage } from "@/components/chat-page";
 import { NoConversation } from "@/components/no-conversation";
+import { SessionsPage } from "@/components/sessions-page";
 import { theme } from "@/lib/theme";
 import { NavigationProvider, useNavigate } from "@/lib/navigation-context";
 import { AppProvider, useApp } from "@/lib/app-context";
@@ -14,6 +15,7 @@ function Router() {
   return (
     <>
       {route === "home" && <HomePage />}
+      {route === "sessions" && <SessionsPage />}
       {route === "chat" && (
         activeConversationId ? <ChatPage /> : <NoConversation />
       )}
@@ -35,6 +37,7 @@ export function App() {
 
 const renderer = await createCliRenderer({
   exitOnCtrlC: true,
+  consoleOptions: { "position": ConsolePosition.BOTTOM, sizePercent: 30 }
 });
 
 createRoot(renderer).render(<App />);

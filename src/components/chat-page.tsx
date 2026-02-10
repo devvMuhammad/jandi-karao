@@ -10,9 +10,8 @@ import { useApp } from "@/lib/app-context";
 import { useNavigate } from "@/lib/navigation-context";
 import type { CommandContext } from "@/lib/commands";
 import type { ScrollBoxRenderable } from "@opentui/core";
-import { saveMessage } from "@/lib/storage";
+import { saveMessage, getMessages } from "@/lib/storage";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
-
 
 const transport = new DirectChatTransport({ agent: codingAgent });
 
@@ -45,11 +44,23 @@ export function ChatPage() {
     await sendMessage({ text: value });
   };
 
+  // Load existing messages or send initial message for new conversation
   useEffect(() => {
-    if (initialMessage) {
+    if (activeConversationId && !initialMessage) {
+      // Load existing messages from database
+      const storedMessages = getMessages(activeConversationId);
+      if (storedMessages.length > 0) {
+        setMessages(storedMessages.map(msg => ({
+          id: msg.id,
+          role: msg.role as "user" | "assistant",
+          parts: msg.parts,
+        })));
+      }
+    } else if (initialMessage) {
+      // New conversation - send the initial message
       handleChatSubmit(initialMessage);
     }
-  }, [initialMessage]);
+  }, [activeConversationId, initialMessage]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo(Infinity);
@@ -60,6 +71,7 @@ export function ChatPage() {
       clearMessages: () => setMessages([]),
       clearInput: () => { },
       navigateHome: () => navigate("home"),
+      navigateSessions: () => navigate("sessions"),
       newConversation: () => { },
       exit: () => process.exit(0),
     }),
