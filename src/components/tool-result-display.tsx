@@ -1,5 +1,23 @@
 import { theme } from "@/lib/theme";
+import { sharedSyntaxStyle } from "@/lib/syntax-style";
 import { MyAgentUIMessage } from "@/ai/agent";
+
+function getFiletypeFromPath(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  const extMap: Record<string, string> = {
+    ts: "typescript",
+    tsx: "typescript",
+    js: "javascript",
+    jsx: "javascript",
+    json: "json",
+    md: "markdown",
+    py: "python",
+    bash: "bash",
+    sh: "bash",
+    zsh: "bash",
+  };
+  return extMap[ext] ?? "text";
+}
 
 interface ToolResultDisplayProps {
   toolCall: MyAgentUIMessage["parts"][number];
@@ -47,7 +65,11 @@ function ReadFileResultDisplay({
             </text>
             {output.data.content && (
               <box paddingTop={1}>
-                <text fg={theme.text}>{output.data.content}</text>
+                <code
+                  content={output.data.content}
+                  filetype={getFiletypeFromPath(toolCall.input?.path ?? "")}
+                  syntaxStyle={sharedSyntaxStyle}
+                />
               </box>
             )}
           </box>
@@ -192,12 +214,21 @@ function BashResultDisplay({
             </text>
             {output.data.stdout.trim() && (
               <box paddingTop={1}>
-                <text fg={theme.text}>{output.data.stdout.trim()}</text>
+                <code
+                  content={output.data.stdout.trim()}
+                  filetype="bash"
+                  syntaxStyle={sharedSyntaxStyle}
+                />
               </box>
             )}
             {output.data.stderr.trim() && (
               <box paddingTop={1}>
-                <text fg={theme.accent}>{output.data.stderr.trim()}</text>
+                <code
+                  content={output.data.stderr.trim()}
+                  filetype="bash"
+                  syntaxStyle={sharedSyntaxStyle}
+                  fg={theme.accent}
+                />
               </box>
             )}
           </box>

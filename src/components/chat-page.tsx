@@ -1,7 +1,8 @@
 import { useRef, useMemo, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DirectChatTransport } from "ai";
-import { theme } from "@/lib/theme"
+import { theme } from "@/lib/theme";
+import { sharedSyntaxStyle } from "@/lib/syntax-style";
 import { codingAgent } from "@/ai/agent";
 import { ToolResultDisplay } from "@/components/tool-result-display";
 import { InputPrompt } from "@/components/input-prompt";
@@ -23,7 +24,6 @@ const transport = new DirectChatTransport({ agent: codingAgent });
 
 export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNewConversation }: ChatPageProps) {
   const scrollRef = useRef<ScrollBoxRenderable>(null);
-  const initialMessageSent = useRef(false);
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport,
@@ -56,8 +56,7 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
   };
 
   useEffect(() => {
-    if (initialMessage && !initialMessageSent.current) {
-      initialMessageSent.current = true;
+    if (initialMessage) {
       handleChatSubmit(initialMessage);
     }
   }, [initialMessage]);
@@ -109,7 +108,10 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
               borderColor={theme.borderFocused}
               paddingLeft={1}
             >
-              <text fg={theme.text}>{message.parts.filter((p) => p.type === "text").map((p) => p.text).join("")}</text>
+              <markdown
+                content={message.parts.filter((p) => p.type === "text").map((p) => p.text).join("")}
+                syntaxStyle={sharedSyntaxStyle}
+              />
             </box>
           ) : (
             <box key={message.id} flexDirection="column" paddingLeft={1} gap={1}>
@@ -119,11 +121,25 @@ export function ChatPage({ conversationId, initialMessage, onNavigateHome, onNew
                 }
 
                 if (part.type === "text") {
-                  return <text key={`${part.type}-${i}`} fg={theme.text}>{part.text}</text>
+                  return (
+                    <markdown
+                      key={`${part.type}-${i}`}
+                      content={part.text}
+                      syntaxStyle={sharedSyntaxStyle}
+                      streaming={true}
+                    />
+                  );
                 }
 
                 if (part.type === "reasoning") {
-                  return <text key={`${part.type}-${i}`} fg={theme.textDim}>{part.text}</text>
+                  return (
+                    <markdown
+                      key={`${part.type}-${i}`}
+                      content={part.text}
+                      syntaxStyle={sharedSyntaxStyle}
+                      streaming={true}
+                    />
+                  );
                 }
 
               })}
