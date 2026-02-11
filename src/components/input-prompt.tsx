@@ -3,7 +3,7 @@ import { theme } from "@/lib/theme";
 import { CommandMenu } from "@/components/command-menu";
 import { useCommandMenu } from "@/hooks/use-command-menu";
 import { useInputBoxLayout } from "@/hooks/use-input-box-layout";
-import type { CommandContext } from "@/lib/commands";
+import { type CommandContext } from "@/lib/commands";
 import type { TextareaRenderable, BoxRenderable } from "@opentui/core";
 
 interface InputPromptProps {
@@ -64,7 +64,7 @@ export function InputPrompt({
         isVisible={isVisible}
       />
 
-      <box ref={inputBoxRef} width={width} flexShrink={0}>
+      <box ref={inputBoxRef} width={width} flexShrink={0} marginTop={1}>
         <box border={["left"]} borderColor={theme.borderFocused} flexShrink={0}>
           <box
             paddingLeft={width ? 2 : 1}

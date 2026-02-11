@@ -154,13 +154,11 @@ export function ChatPage() {
       </scrollbox>
 
       {/* Input Prompt with Command Menu */}
-      <box marginTop={1} flexShrink={0}>
-        <InputPrompt
-          commandContext={commandContext}
-          onSubmit={handleChatSubmit}
-          placeholder="Type your message... (/exit to quit, /home to go back)"
-        />
-      </box>
+      <InputPrompt
+        commandContext={commandContext}
+        onSubmit={handleChatSubmit}
+        placeholder="Type your message... (/exit to quit, /home to go back)"
+      />
     </box>
   );
 }

@@ -209,9 +209,6 @@ function BashResultDisplay({
         </text>
         {output.success ? (
           <box flexDirection="column" paddingLeft={3}>
-            <text fg={theme.textDim}>
-              {`+ exit code ${output.data.exitCode}`}
-            </text>
             {output.data.stdout.trim() && (
               <box paddingTop={1}>
                 <code
