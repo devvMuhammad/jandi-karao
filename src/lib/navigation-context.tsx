@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from "react";
 
-export type Route = "home" | "chat" | "sessions";
+export type Route = "home" | "chat" | "sessions" | "help";
 const DEFAULT_ROUTE: Route = "home";
 
 

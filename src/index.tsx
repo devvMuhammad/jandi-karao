@@ -4,6 +4,7 @@ import { HomePage } from "@/components/home-page";
 import { ChatPage } from "@/components/chat-page";
 import { NoConversation } from "@/components/no-conversation";
 import { SessionsPage } from "@/components/sessions-page";
+import { HelpPage } from "@/components/help-page";
 import { theme } from "@/lib/theme";
 import { NavigationProvider, useNavigate } from "@/lib/navigation-context";
 import { AppProvider, useApp } from "@/lib/app-context";
@@ -16,6 +17,7 @@ function Router() {
     <>
       {route === "home" && <HomePage />}
       {route === "sessions" && <SessionsPage />}
+      {route === "help" && <HelpPage />}
       {route === "chat" && (
         activeConversationId ? <ChatPage /> : <NoConversation />
       )}

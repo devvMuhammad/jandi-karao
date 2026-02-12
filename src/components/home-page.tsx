@@ -24,6 +24,7 @@ export function HomePage() {
       clearInput: () => { },
       navigateHome: () => { },
       navigateSessions: () => navigate("sessions"),
+      navigateHelp: () => navigate("help"),
       newConversation: () => { },
       exit: () => process.exit(0),
     }),

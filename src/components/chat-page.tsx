@@ -23,12 +23,6 @@ export function ChatPage() {
   const scrollRef = useRef<ScrollBoxRenderable>(null);
   const [conversationName, setConversationName] = useState<string | undefined>();
 
-  const renderer = useRenderer();
-
-  useEffect(() => {
-    renderer.console.show()
-  }, [])
-
   const { messages, sendMessage, status, setMessages } = useChat({
     transport,
     onFinish: ({ message }) => {
@@ -98,6 +92,7 @@ export function ChatPage() {
       clearInput: () => { },
       navigateHome: () => navigate("home"),
       navigateSessions: () => navigate("sessions"),
+      navigateHelp: () => navigate("help"),
       newConversation: () => { },
       exit: () => process.exit(0),
     }),
