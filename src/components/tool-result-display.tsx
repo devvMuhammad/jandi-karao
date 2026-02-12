@@ -1,6 +1,42 @@
+import { useState } from "react";
 import { theme } from "@/lib/theme";
 import { sharedSyntaxStyle } from "@/lib/syntax-style";
 import { MyAgentUIMessage } from "@/ai/agent";
+
+const MAX_COLLAPSED_HEIGHT = 6;
+
+function CollapsibleOutput({
+  children,
+  lines,
+}: {
+  children: React.ReactNode;
+  lines: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (lines <= MAX_COLLAPSED_HEIGHT) {
+    return <>{children}</>;
+  }
+
+  return (
+    <box
+      flexDirection="column"
+      onMouseDown={() => setExpanded((prev) => !prev)}
+    >
+      <box
+        maxHeight={expanded ? undefined : MAX_COLLAPSED_HEIGHT}
+        overflow="hidden"
+      >
+        {children}
+      </box>
+      <box paddingTop={0} marginTop={1}>
+        <text fg={theme.accent}>
+          {expanded ? "▴ Show less" : "▾ Show more"}
+        </text>
+      </box>
+    </box>
+  );
+}
 
 function getFiletypeFromPath(path: string): string {
   const ext = path.split(".").pop()?.toLowerCase() ?? "";
@@ -59,18 +95,22 @@ function ReadFileResultDisplay({
           <span fg={theme.text}>{toolCall.input?.path}</span>
         </text>
         {output.success ? (
-          <box flexDirection="column" paddingLeft={3}>
-            <text fg={theme.textDim}>
-              {`+ ${output.data.size} bytes, ${output.data.lines} lines`}
-            </text>
+          <box flexDirection="column">
+            <box paddingLeft={3}>
+              <text fg={theme.textDim}>
+                {`+ ${output.data.size} bytes, ${output.data.lines} lines`}
+              </text>
+            </box>
             {output.data.content && (
-              <box paddingTop={1}>
-                <code
-                  content={output.data.content}
-                  filetype={getFiletypeFromPath(toolCall.input?.path ?? "")}
-                  syntaxStyle={sharedSyntaxStyle}
-                />
-              </box>
+              <CollapsibleOutput lines={output.data.lines}>
+                <box paddingTop={1} paddingLeft={3}>
+                  <code
+                    content={output.data.content}
+                    filetype={getFiletypeFromPath(toolCall.input?.path ?? "")}
+                    syntaxStyle={sharedSyntaxStyle}
+                  />
+                </box>
+              </CollapsibleOutput>
             )}
           </box>
         ) : (
@@ -208,27 +248,38 @@ function BashResultDisplay({
           <span fg={theme.text}>{toolCall.input?.command}</span>
         </text>
         {output.success ? (
-          <box flexDirection="column" paddingLeft={3}>
-            {output.data.stdout.trim() && (
-              <box paddingTop={1}>
-                <code
-                  content={output.data.stdout.trim()}
-                  filetype="bash"
-                  syntaxStyle={sharedSyntaxStyle}
-                />
-              </box>
-            )}
-            {output.data.stderr.trim() && (
-              <box paddingTop={1}>
-                <code
-                  content={output.data.stderr.trim()}
-                  filetype="bash"
-                  syntaxStyle={sharedSyntaxStyle}
-                  fg={theme.accent}
-                />
-              </box>
-            )}
-          </box>
+          <CollapsibleOutput
+            lines={
+              (output.data.stdout.trim()
+                ? output.data.stdout.trim().split("\n").length
+                : 0) +
+              (output.data.stderr.trim()
+                ? output.data.stderr.trim().split("\n").length
+                : 0)
+            }
+          >
+            <box flexDirection="column" paddingLeft={3}>
+              {output.data.stdout.trim() && (
+                <box paddingTop={1}>
+                  <code
+                    content={output.data.stdout.trim()}
+                    filetype="bash"
+                    syntaxStyle={sharedSyntaxStyle}
+                  />
+                </box>
+              )}
+              {output.data.stderr.trim() && (
+                <box paddingTop={1}>
+                  <code
+                    content={output.data.stderr.trim()}
+                    filetype="bash"
+                    syntaxStyle={sharedSyntaxStyle}
+                    fg={theme.accent}
+                  />
+                </box>
+              )}
+            </box>
+          </CollapsibleOutput>
         ) : (
           <box paddingLeft={3}>
             <text fg={theme.accent}>{`x ${output.error}`}</text>
@@ -273,22 +324,19 @@ function GrepResultDisplay({
           <span fg={theme.textDim}>{` in ${toolCall.input?.path}`}</span>
         </text>
         {output.success ? (
-          <box flexDirection="column" paddingLeft={3}>
-            <text fg={theme.textDim}>
-              {`+ ${output.data.matchCount} match${output.data.matchCount === 1 ? "" : "es"}`}
-            </text>
-            {output.data.matches.slice(0, 8).map((m, i) => (
-              <text key={i} fg={theme.text}>
-                <span fg={theme.textDim}>{`${m.file}:${m.line}`}</span>
-                {` ${m.content}`}
-              </text>
-            ))}
-            {output.data.matchCount > 8 && (
+          <CollapsibleOutput lines={output.data.matchCount + 1}>
+            <box flexDirection="column" paddingLeft={3}>
               <text fg={theme.textDim}>
-                {`... and ${output.data.matchCount - 8} more`}
+                {`+ ${output.data.matchCount} match${output.data.matchCount === 1 ? "" : "es"}`}
               </text>
-            )}
-          </box>
+              {output.data.matches.map((m, i) => (
+                <text key={i} fg={theme.text}>
+                  <span fg={theme.textDim}>{`${m.file}:${m.line}`}</span>
+                  {` ${m.content}`}
+                </text>
+              ))}
+            </box>
+          </CollapsibleOutput>
         ) : (
           <box paddingLeft={3}>
             <text fg={theme.accent}>{`x ${output.error}`}</text>

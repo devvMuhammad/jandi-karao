@@ -2,4 +2,4 @@
 trigger: always_on
 ---
 
-always refer to .claude repo for rules
+always refer to .claude repo for rules and skills

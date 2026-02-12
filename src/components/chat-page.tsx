@@ -3,27 +3,25 @@ import { useChat } from "@ai-sdk/react";
 import { DirectChatTransport } from "ai";
 import { theme } from "@/lib/theme";
 import { sharedSyntaxStyle } from "@/lib/syntax-style";
-import { codingAgent } from "@/ai/agent";
+import { codingAgent, MyAgentUIMessage } from "@/ai/agent";
 import { generateConversationTitle } from "@/ai/generate-title";
 import { ToolResultDisplay } from "@/components/tool-result-display";
 import { InputPrompt } from "@/components/input-prompt";
 import { useApp } from "@/lib/app-context";
 import { useNavigate } from "@/lib/navigation-context";
 import type { CommandContext } from "@/lib/commands";
-import type { ScrollBoxRenderable } from "@opentui/core";
+import type { KeyEvent, ScrollBoxRenderable } from "@opentui/core";
 import { saveMessage, updateConversationName, getConversation } from "@/lib/storage";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
-import { useRenderer } from "@opentui/react";
+import { useKeyboard } from "@opentui/react";
 
 const transport = new DirectChatTransport({ agent: codingAgent });
-
 export function ChatPage() {
   const { activeConversationId, initialMessage } = useApp();
   const { navigate } = useNavigate();
   const scrollRef = useRef<ScrollBoxRenderable>(null);
   const [conversationName, setConversationName] = useState<string | undefined>();
-
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, setMessages, stop } = useChat<MyAgentUIMessage>({
     transport,
     onFinish: ({ message }) => {
       saveMessage(activeConversationId!, {
@@ -33,8 +31,14 @@ export function ChatPage() {
       });
     },
   });
-
   const isLoading = status === "submitted" || status === "streaming";
+
+  // Cancel ongoing message with Escape key
+  useKeyboard((key: KeyEvent) => {
+    if (key.name === "escape" && isLoading) {
+      stop();
+    }
+  });
 
   const handleChatSubmit = async (value: string, setConversationTitle: boolean = false) => {
 
@@ -50,10 +54,13 @@ export function ChatPage() {
       if (setConversationTitle) {
         console.log("Generating title...");
         // just generate it, in case of error, just do nothing
-        const title = await generateConversationTitle(value)
-        console.log("Generated title:", title);
-        updateConversationName(activeConversationId, title);
-        setConversationName(title);
+        generateConversationTitle(value).then((title) => {
+          console.log("Generated title:", title);
+          if (activeConversationId) {
+            updateConversationName(activeConversationId, title);
+          }
+          setConversationName(title);
+        });
       }
     }
 
@@ -171,15 +178,28 @@ export function ChatPage() {
             </box>
           ),
         )}
-        {isLoading && <ThinkingIndicator />}
       </scrollbox>
 
       {/* Input Prompt with Command Menu */}
       <InputPrompt
         commandContext={commandContext}
         onSubmit={handleChatSubmit}
-        placeholder="Type your message... (/exit to quit, /home to go back)"
+        placeholder="Type your message"
       />
+
+      <box flexShrink={0} padding={1} flexDirection="row" justifyContent="space-between">
+        <box flexDirection="row" gap={1}>
+          {isLoading ? (
+            <>
+              <ThinkingIndicator />
+              <text fg={theme.textDim}>Press ESC to cancel</text>
+            </>
+          ) : (
+            <text fg={theme.textDim}>Press / for commands</text>
+          )}
+        </box>
+        <text fg="#00e5ff">kimi-k2-thinking</text>
+      </box>
     </box>
   );
 }

@@ -27,7 +27,7 @@ export function ThinkingIndicator() {
   const secondary = phase === 0 ? theme.accentSecondary : theme.accent;
 
   return (
-    <box paddingLeft={1} marginTop={1} flexDirection="row">
+    <box flexDirection="row">
       <text fg={primary}>{spinner} Thinking</text>
     </box>
   );
