@@ -28,9 +28,7 @@ export function ThinkingIndicator() {
 
   return (
     <box paddingLeft={1} marginTop={1} flexDirection="row">
-      <text fg={secondary}>{sparkleL} </text>
-      <text fg={primary}>{spinner} Thinking{dots}</text>
-      <text fg={secondary}> {sparkleR}</text>
+      <text fg={primary}>{spinner} Thinking</text>
     </box>
   );
 }

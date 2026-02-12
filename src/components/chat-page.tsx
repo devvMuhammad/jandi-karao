@@ -1,17 +1,19 @@
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DirectChatTransport } from "ai";
 import { theme } from "@/lib/theme";
 import { sharedSyntaxStyle } from "@/lib/syntax-style";
 import { codingAgent } from "@/ai/agent";
+import { generateConversationTitle } from "@/ai/generate-title";
 import { ToolResultDisplay } from "@/components/tool-result-display";
 import { InputPrompt } from "@/components/input-prompt";
 import { useApp } from "@/lib/app-context";
 import { useNavigate } from "@/lib/navigation-context";
 import type { CommandContext } from "@/lib/commands";
 import type { ScrollBoxRenderable } from "@opentui/core";
-import { saveMessage, getMessages } from "@/lib/storage";
+import { saveMessage, updateConversationName, getConversation } from "@/lib/storage";
 import { ThinkingIndicator } from "@/components/thinking-indicator";
+import { useRenderer } from "@opentui/react";
 
 const transport = new DirectChatTransport({ agent: codingAgent });
 
@@ -19,6 +21,13 @@ export function ChatPage() {
   const { activeConversationId, initialMessage } = useApp();
   const { navigate } = useNavigate();
   const scrollRef = useRef<ScrollBoxRenderable>(null);
+  const [conversationName, setConversationName] = useState<string | undefined>();
+
+  const renderer = useRenderer();
+
+  useEffect(() => {
+    renderer.console.show()
+  }, [])
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport,
@@ -33,12 +42,25 @@ export function ChatPage() {
 
   const isLoading = status === "submitted" || status === "streaming";
 
-  const handleChatSubmit = async (value: string) => {
+  const handleChatSubmit = async (value: string, setConversationTitle: boolean = false) => {
+
+    console.log("handleChatSubmit")
+    console.log("Active conversation ID:", activeConversationId);
     if (activeConversationId) {
       saveMessage(activeConversationId, {
         role: "user",
         parts: [{ type: "text", text: value }],
       });
+
+      // Generate AI title after the first user message
+      if (setConversationTitle) {
+        console.log("Generating title...");
+        // just generate it, in case of error, just do nothing
+        const title = await generateConversationTitle(value)
+        console.log("Generated title:", title);
+        updateConversationName(activeConversationId, title);
+        setConversationName(title);
+      }
     }
 
     await sendMessage({ text: value });
@@ -47,18 +69,22 @@ export function ChatPage() {
   // Load existing messages or send initial message for new conversation
   useEffect(() => {
     if (activeConversationId && !initialMessage) {
-      // Load existing messages from database
-      const storedMessages = getMessages(activeConversationId);
-      if (storedMessages.length > 0) {
-        setMessages(storedMessages.map(msg => ({
-          id: msg.id,
-          role: msg.role as "user" | "assistant",
-          parts: msg.parts,
-        })));
+      // Load conversation name and existing messages from database
+      const conv = getConversation(activeConversationId);
+      if (conv) {
+        setConversationName(conv.name);
+        if (conv.messages.length > 0) {
+          setMessages(conv.messages.map((msg) => ({
+            id: msg.id,
+            role: msg.role as "user" | "assistant",
+            parts: msg.parts,
+          })));
+        }
       }
     } else if (initialMessage) {
-      // New conversation - send the initial message
-      handleChatSubmit(initialMessage);
+      console.log("Initial message:", initialMessage);
+      // New conversation - load name and send the initial message
+      handleChatSubmit(initialMessage, true);
     }
   }, [activeConversationId, initialMessage]);
 
@@ -92,7 +118,7 @@ export function ChatPage() {
             paddingBottom={1}
             backgroundColor={theme.bgHighlight}
           >
-            <text fg={theme.accentSecondary}># Conversation</text>
+            <text fg={theme.accentSecondary}># {conversationName ?? "Conversation"}</text>
             <text fg={theme.textDim}>tokens: 0 | cost: $0.00</text>
           </box>
         </box>

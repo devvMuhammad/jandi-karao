@@ -8,3 +8,4 @@ const provider = createOpenAICompatible({
 });
 
 export const moonshot = provider('kimi-k2-thinking');
+export const turboMoonshot = provider('kimi-k2-turbo-preview');

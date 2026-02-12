@@ -6,6 +6,7 @@ import type { MyAgentUIMessage } from "@/ai/agent"
 
 export interface Conversation {
   id: string;
+  name: string;
   directory: string;
   created_at: string;
   updated_at: string;
@@ -38,6 +39,7 @@ function getDb(): Database {
   db.run(`
     CREATE TABLE IF NOT EXISTS conversations (
       id TEXT PRIMARY KEY,
+      name TEXT NOT NULL DEFAULT '',
       directory TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -56,22 +58,42 @@ function getDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_conversations_directory ON conversations(directory, updated_at DESC);
   `);
 
+  // Migration: add name column for existing databases
+  try {
+    db.run(`ALTER TABLE conversations ADD COLUMN name TEXT NOT NULL DEFAULT ''`);
+  } catch {
+    // Column already exists — ignore
+  }
+
   return db;
 }
 
 // Functions
 
+function formatDefaultName(): string {
+  const now = new Date();
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `Session # ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+
 export function createConversation(): Conversation {
   const id = crypto.randomUUID();
   const directory = process.cwd();
+  const conversationName = formatDefaultName();
 
   getDb()
-    .prepare("INSERT INTO conversations (id, directory) VALUES (?, ?)")
-    .run(id, directory);
+    .prepare("INSERT INTO conversations (id, name, directory) VALUES (?, ?, ?)")
+    .run(id, conversationName, directory);
 
   return getDb()
     .prepare("SELECT * FROM conversations WHERE id = ?")
     .get(id) as Conversation;
+}
+
+export function updateConversationName(id: string, name: string): void {
+  getDb()
+    .prepare("UPDATE conversations SET name = ? WHERE id = ?")
+    .run(name, id);
 }
 
 export function getConversation(id: string): ConversationWithMessages | null {

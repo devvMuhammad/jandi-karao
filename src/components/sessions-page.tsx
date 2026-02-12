@@ -1,25 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { useKeyboard } from "@opentui/react";
 import { theme } from "@/lib/theme";
-import { getAllConversations, getMessages, deleteConversation } from "@/lib/storage";
+import { getAllConversations, deleteConversation } from "@/lib/storage";
 import type { Conversation } from "@/lib/storage";
 import { useApp } from "@/lib/app-context";
 import { useNavigate } from "@/lib/navigation-context";
 
 interface ConversationWithTitle extends Conversation {
   title: string;
-}
-
-function getConversationTitle(conv: Conversation): string {
-  const messages = getMessages(conv.id);
-  const firstUserMessage = messages.find((m) => m.role === "user");
-
-  if (firstUserMessage && firstUserMessage.parts[0]?.type === "text") {
-    const text = firstUserMessage.parts[0].text;
-    return text.length > 50 ? text.slice(0, 50) + "..." : text;
-  }
-
-  return "New conversation";
 }
 
 function formatTime(dateString: string): string {
@@ -64,7 +52,7 @@ export function SessionsPage() {
     const convs = getAllConversations();
     return convs.map((conv) => ({
       ...conv,
-      title: getConversationTitle(conv),
+      title: conv.name,
     }));
   }, []);
 
@@ -157,7 +145,7 @@ export function SessionsPage() {
             return (
               <box key={dateKey} flexDirection="column" marginBottom={1}>
                 {/* Date Header */}
-                <text fg={theme.accentSecondary} marginBottom={1}>
+                <text fg={theme.accentSecondary}>
                   {dateKey}
                 </text>
 
@@ -172,7 +160,6 @@ export function SessionsPage() {
                       flexDirection="row"
                       justifyContent="space-between"
                       backgroundColor={isSelected ? "#d4a574" : theme.bg}
-                      paddingLeft={1}
                       paddingRight={1}
                     >
                       <text fg={isSelected ? "#000000" : theme.text}>
